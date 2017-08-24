@@ -19,7 +19,24 @@ open class Group: Node {
             }
         }
     }
-    
+
+    open var imagesRequiringInjection: [Image] {
+        var images = [Image]()
+        contents.forEach {
+            switch $0 {
+            case let image as Image:
+                if image.requiresInjection {
+                    images.append(image)
+                }
+            case let group as Group:
+                images += group.imagesRequiringInjection
+            default:
+                break
+            }
+        }
+        return images
+
+    }
     
     public init(contents: [Node] = [], place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
         self.contentsVar = AnimatableVariable<[Node]>(contents)

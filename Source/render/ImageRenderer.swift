@@ -28,6 +28,7 @@ class ImageRenderer: NodeRenderer {
 		observe(image.aspectRatioVar)
 		observe(image.wVar)
 		observe(image.hVar)
+		observe(image.injectedUIImageVar)
 	}
 
 	override func doRender(_ force: Bool, opacity: Double) {

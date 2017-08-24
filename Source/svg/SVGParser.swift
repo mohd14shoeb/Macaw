@@ -28,7 +28,7 @@ open class SVGParser {
     
     /// Parse the specified content of an SVG file.
     /// - returns: Root node of the corresponding Macaw scene.
-    open class func parse(text: String) throws -> Node {
+    open class func parse(text: String) throws -> Group {
         return SVGParser(text).parse()
     }
     

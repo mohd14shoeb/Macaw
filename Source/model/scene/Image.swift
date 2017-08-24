@@ -37,9 +37,19 @@ open class Image: Node {
         get { return hVar.value }
         set(val) { hVar.value = val }
     }
-    
+
+    open var requiresInjection: Bool {
+        return (src.hasPrefix("http://") || src.hasPrefix("https://"))
+    }
+
+    open let injectedUIImageVar: Variable<UIImage?>
+    open var injectedUIImage: UIImage? {
+        get {  return injectedUIImageVar.value }
+        set(val) { injectedUIImageVar.value = val }
+    }
+
     private var uiImage: UIImage?
-    
+
     public init(src: String, xAlign: Align = .min, yAlign: Align = .min, aspectRatio: AspectRatio = .none, w: Int = 0, h: Int = 0, place: Transform = Transform.identity, opaque: Bool = true, opacity: Double = 1, clip: Locus? = nil, effect: Effect? = nil, visible: Bool = true, tag: [String] = []) {
         self.srcVar = Variable<String>(src)
         self.xAlignVar = Variable<Align>(xAlign)
@@ -47,6 +57,7 @@ open class Image: Node {
         self.aspectRatioVar = Variable<AspectRatio>(aspectRatio)
         self.wVar = Variable<Int>(w)
         self.hVar = Variable<Int>(h)
+        self.injectedUIImageVar = Variable(nil)
         super.init(
             place: place,
             opaque: opaque,
@@ -76,6 +87,7 @@ open class Image: Node {
         self.aspectRatioVar = Variable<AspectRatio>(aspectRatio)
         self.wVar = Variable<Int>(w)
         self.hVar = Variable<Int>(h)
+        self.injectedUIImageVar = Variable(nil)
         super.init(
             place: place,
             opaque: opaque,
@@ -109,6 +121,11 @@ open class Image: Node {
         // image already loaded
         if let _ = uiImage {
             return uiImage
+        }
+
+        // The underlying image is unmanaged by us (remote images that need to be downloaded and injected by consumers).
+        if requiresInjection {
+            return injectedUIImage
         }
         
         // In-memory image
