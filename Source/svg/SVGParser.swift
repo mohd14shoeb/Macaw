@@ -170,7 +170,7 @@ open class SVGParser {
             case "mask":
                 break
             default:
-//                print("SVG parsing error. Shape \(element.name) not supported")
+                print("SVG parsing error. Shape \(element.name) not supported")
                 return .none
             }
         }
