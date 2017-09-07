@@ -58,9 +58,7 @@ open class SVGParser {
         case closePath
         case none
     }
-    
-    fileprivate typealias PathCommand = (type: PathCommandType, expression: String, absolute: Bool)
-    
+
     fileprivate init(_ string: String, pos: Transform = Transform()) {
         self.xmlString = string
         self.initialPosition = pos
@@ -69,14 +67,14 @@ open class SVGParser {
     fileprivate func parse() -> Group {
         let parsedXml = SWXMLHash.parse(xmlString)
         iterateThroughXmlTree(parsedXml.children)
-        
+
         let group = Group(contents: self.nodes, place: initialPosition)
         group.viewBox = viewBox
         return group
     }
     
     fileprivate func iterateThroughXmlTree(_ children: [XMLIndexer]) {
-        children.forEach { child in
+        for child in children {
             if let element = child.element {
                 if element.name == "svg" {
                     if let viewBoxValue: String = element.value(ofAttribute: "viewBox") {
@@ -172,7 +170,7 @@ open class SVGParser {
             case "mask":
                 break
             default:
-                print("SVG parsing error. Shape \(element.name) not supported")
+//                print("SVG parsing error. Shape \(element.name) not supported")
                 return .none
             }
         }
@@ -200,7 +198,7 @@ open class SVGParser {
         var groupNodes: [Node] = []
         let style = getStyleAttributes(groupStyle, element: element)
         let position = getPosition(element)
-        group.children.forEach { child in
+        for child in group.children {
             if let node = parseNode(child, groupStyle: style) {
                 groupNodes.append(node)
             }
@@ -347,14 +345,14 @@ open class SVGParser {
         if let style = element.allAttributes["style"]?.text {
             
             let styleParts = style.replacingOccurrences(of: " ", with: "").components(separatedBy: ";")
-            styleParts.forEach { styleAttribute in
+            for styleAttribute in styleParts {
                 let currentStyle = styleAttribute.components(separatedBy: ":")
                 if currentStyle.count == 2 {
                     styleAttributes.updateValue(currentStyle[1], forKey: currentStyle[0])
                 }
             }
         } else {
-            self.availableStyleAttributes.forEach { availableAttribute in
+            for availableAttribute in self.availableStyleAttributes {
                 if let styleAttribute = element.allAttributes[availableAttribute]?.text {
                     styleAttributes.updateValue(styleAttribute, forKey: availableAttribute)
                 }
@@ -446,13 +444,15 @@ open class SVGParser {
         
         return .none
     }
+
+    private static let numberFormatter = NumberFormatter()
     
     fileprivate func getStrokeWidth(_ styleParts: [String: String]) -> Double {
         if let strokeWidth = styleParts["stroke-width"] {
             let characterSet = NSCharacterSet.decimalDigits.union(NSCharacterSet.punctuationCharacters).inverted
             let digitsArray = strokeWidth.components(separatedBy: characterSet)
             let digits = digitsArray.joined(separator: "")
-            if let value = NumberFormatter().number(from: digits) {
+            if let value = SVGParser.numberFormatter.number(from: digits) {
                 return value.doubleValue
             }
         }
@@ -496,7 +496,7 @@ open class SVGParser {
             characterSet.insert(" ")
             characterSet.insert(",")
             let separatedValues = strokeDashes.components(separatedBy: characterSet)
-            separatedValues.forEach { value in
+            for value in separatedValues {
                 if let doubleValue = Double(value) {
                     dashes.append(doubleValue)
                 }
@@ -601,9 +601,9 @@ open class SVGParser {
         var resultPoints: [Double] = []
         let pointPairs = pointsString.components(separatedBy: " ")
         
-        pointPairs.forEach { pointPair in
+        for pointPair in pointPairs {
             let points = pointPair.components(separatedBy: ",")
-            points.forEach { point in
+            for point in points {
                 if let resultPoint = Double(point) {
                     resultPoints.append(resultPoint)
                 }
@@ -788,7 +788,7 @@ open class SVGParser {
             return text
         }
         if let group = node as? Group {
-            group.contents.forEach { node in
+            for node in group.contents {
                 _ = parseUseNode(node: node, fill: fill, stroke: stroke, mask: mask)
             }
             return group
@@ -801,7 +801,7 @@ open class SVGParser {
             return .none
         }
         var node: Node?
-        mask.children.forEach { indexer in
+        for indexer in mask.children {
             if let useNode = parseUse(indexer, fill: .none, stroke: .none, pos: Transform(), opacity: 0) {
                 node = useNode
             } else if let contentNode = parseNode(indexer) {
@@ -939,7 +939,7 @@ open class SVGParser {
     
     fileprivate func parseStops(_ stops: [XMLIndexer]) -> [Stop] {
         var result = [Stop]()
-        stops.forEach { stopXML in
+        for stopXML in stops {
             if let stop = parseStop(stopXML) {
                 result.append(stop)
             }
@@ -979,206 +979,102 @@ open class SVGParser {
         }
         return .none
     }
+
+    private static let pathCommandsCharacterSet = CharacterSet(charactersIn: SVGConstants.pathCommands.joined())
     
     fileprivate func parsePathCommands(_ d: String) -> [PathSegment] {
-        var d = d.trimmingCharacters(in: .whitespaces)
-        
-        var pathCommands = [PathCommand]()
+        var commands = [PathSegment]()
         var pathCommandName: NSString? = ""
         var pathCommandValues: NSString? = ""
         let scanner = Scanner(string: d)
-        let set = CharacterSet(charactersIn: SVGConstants.pathCommands.joined())
-        let charCount = d.characters.count
+        scanner.charactersToBeSkipped = CharacterSet.whitespaces
+        let set = SVGParser.pathCommandsCharacterSet
         repeat {
             scanner.scanCharacters(from: set, into: &pathCommandName)
             scanner.scanUpToCharacters(from: set, into: &pathCommandValues)
-            pathCommands.append(
-                PathCommand(
-                    type: getCommandType(pathCommandName! as String),
-                    expression: pathCommandValues! as String,
-                    absolute: isAbsolute(pathCommandName! as String)
-                )
-            )
-            
-            if scanner.scanLocation == charCount {
-                break
-            }
-        } while pathCommandValues!.length > 0
-        var commands = [PathSegment]()
-        pathCommands.forEach { command in
-            if let parsedCommand = parseCommand(command) {
+
+            if let parsedCommand = parseCommand(type: pathCommandName! as String, expression: pathCommandValues! as String) {
                 commands.append(parsedCommand)
             }
-        }
+
+            if scanner.isAtEnd {
+                break
+            }
+
+        } while pathCommandValues!.length > 0
+
         return commands
     }
+
+    private static let commandSeparatorCharacterSet: CharacterSet = {
+        var characterSet = NSMutableCharacterSet()
+        characterSet.addCharacters(in: " ,")
+        return characterSet as CharacterSet
+    }()
     
-    fileprivate func parseCommand(_ command: PathCommand) -> PathSegment? {
-        var characterSet = CharacterSet()
-        characterSet.insert(" ")
-        characterSet.insert(",")
-        let commandParams = command.expression.components(separatedBy: characterSet)
-        var separatedValues = [String]()
-        commandParams.forEach { param in
-            separatedValues.append(contentsOf: separateNegativeValuesIfNeeded(param))
+    fileprivate func parseCommand(type: String, expression: String) -> PathSegment? {
+        let typeLower = type.lowercased()
+        let isAbsolute = typeLower != type
+
+        let scanner = Scanner(string: expression)
+        scanner.charactersToBeSkipped = SVGParser.commandSeparatorCharacterSet
+        var data = [Double]()
+        var double = 0.0
+        while scanner.scanDouble(&double) {
+            data.append(double)
         }
-        
-        switch command.type {
-        case .moveTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
+
+        switch typeLower {
+        case SVGConstants.moveToRelative:
             if data.count < 2 {
                 return .none
             }
             
-            return PathSegment(type: command.absolute ? .M : .m, data: data)
+            return PathSegment(type: isAbsolute ? .M : .m, data: data)
             
-        case .lineTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
+        case SVGConstants.lineToRelative:
             if data.count < 2 {
                 return .none
             }
             
-            return PathSegment(type: command.absolute ? .L : .l, data: data)
+            return PathSegment(type: isAbsolute ? .L : .l, data: data)
             
-        case .lineH:
-            if separatedValues.count < 1 {
+        case SVGConstants.lineHorizontalRelative:
+            if data.count < 1 {
                 return .none
             }
+
+            return PathSegment(type: isAbsolute ? .H : .h, data: data)
             
-            guard let x = Double(separatedValues[0]) else {
+        case SVGConstants.lineVerticalRelative:
+            if data.count < 1 {
                 return .none
             }
+
+            return PathSegment(type: isAbsolute ? .V : .v, data: data)
             
-            return PathSegment(type: command.absolute ? .H : .h, data: [x])
-            
-        case .lineV:
-            if separatedValues.count < 1 {
-                return .none
-            }
-            
-            guard let y = Double(separatedValues[0]) else {
-                return .none
-            }
-            
-            return PathSegment(type: command.absolute ? .V : .v, data: [y])
-            
-        case .curveTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
+        case SVGConstants.curveToRelative:
             if data.count < 6 {
                 return .none
             }
             
-            return PathSegment(type: command.absolute ? .C : .c, data: data)
+            return PathSegment(type: isAbsolute ? .C : .c, data: data)
             
-        case .smoothCurveTo:
-            var data = [Double]()
-            separatedValues.forEach { value in
-                if let double = Double(value) {
-                    data.append(double)
-                }
-            }
-            
+        case SVGConstants.smoothCurveToRelative:
             if data.count < 4 {
                 return .none
             }
             
-            return PathSegment(type: command.absolute ? .S : .s, data: data)
+            return PathSegment(type: isAbsolute ? .S : .s, data: data)
             
-        case .closePath:
+        case SVGConstants.closePathRelative:
             return PathSegment(type: .z)
-        case .quadraticCurveTo:
-            let data = separatedValues.flatMap { Double($0) }
+        case SVGConstants.quadraticCurveRelative:
             if data.count < 4 {
                 return .none
             }
 
-            return PathSegment(type: command.absolute ? .Q : .q, data: data)
-        case .none:
-            return .none
-        }
-    }
-    
-    fileprivate func separateNegativeValuesIfNeeded(_ expression: String) -> [String] {
-        var values = [String]()
-        var value = String()
-        var e = false
-        
-        expression.unicodeScalars.forEach { scalar in
-            if scalar == "e" {
-                e = true
-            }
-            if scalar == "-" && !e {
-                if !value.isEmpty {
-                    values.append(value)
-                    value = String()
-                }
-                e = false
-            }
-            
-            value.append("\(scalar)")
-        }
-        
-        if !value.isEmpty {
-            values.append(value)
-        }
-        
-        return values
-    }
-    
-    fileprivate func isAbsolute(_ commandString: String) -> Bool {
-        return !commandString.trimmingCharacters(in: CharacterSet.lowercaseLetters).isEmpty
-    }
-    
-    fileprivate func getCommandType(_ commandString: String) -> PathCommandType {
-        switch commandString {
-        case SVGConstants.moveToAbsolute:
-            return .moveTo
-        case SVGConstants.moveToRelative:
-            return .moveTo
-        case SVGConstants.lineToAbsolute:
-            return .lineTo
-        case SVGConstants.lineToRelative:
-            return .lineTo
-        case SVGConstants.lineVerticalAbsolute:
-            return .lineV
-        case SVGConstants.lineVerticalRelative:
-            return .lineV
-        case SVGConstants.lineHorizontalAbsolute:
-            return .lineH
-        case SVGConstants.lineHorizontalRelative:
-            return .lineH
-        case SVGConstants.curveToAbsolute:
-            return .curveTo
-        case SVGConstants.curveToRelative:
-            return .curveTo
-        case SVGConstants.smoothCurveToAbsolute:
-            return .smoothCurveTo
-        case SVGConstants.smoothCurveToRelative:
-            return .smoothCurveTo
-        case SVGConstants.quadraticCurveAbsolute, SVGConstants.quadraticCurveRelative:
-            return .quadraticCurveTo
-        case SVGConstants.closePathAbsolute:
-            return .closePath
-        case SVGConstants.closePathRelative:
-            return .closePath
+            return PathSegment(type: isAbsolute ? .Q : .q, data: data)
         default:
             return .none
         }
@@ -1279,7 +1175,7 @@ open class SVGParser {
         }
         if let group = referenceNode as? Group {
             var contents = [Node]()
-            group.contents.forEach { node in
+            for node in group.contents {
                 if let copy = copyNode(node) {
                     contents.append(copy)
                 }
