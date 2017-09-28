@@ -1122,7 +1122,7 @@ open class SVGParser {
         }
         var cleanedFontSize = fontSize
         if cleanedFontSize.hasSuffix("px") {
-            cleanedFontSize = String(cleanedFontSize[...cleanedFontSize.index(cleanedFontSize.endIndex, offsetBy: -2)])
+            cleanedFontSize = String(cleanedFontSize[..<cleanedFontSize.index(cleanedFontSize.endIndex, offsetBy: -2)])
         }
         if let size = Double(cleanedFontSize) {
             return (Int(round(size)))
