@@ -89,8 +89,8 @@ class RenderUtils {
       
       if fontName.characters.first == " " {
         let index = fontName.index(fontName.startIndex, offsetBy:1)
-        let fixedName = fontName.substring(from: index)
-        customFont = MFont(name: fixedName, size: CGFloat(size))
+        let fixedName = fontName[index...]
+        customFont = MFont(name: String(fixedName), size: CGFloat(size))
         return
       }
       

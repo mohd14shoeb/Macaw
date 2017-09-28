@@ -44,8 +44,8 @@ class TextRenderer: NodeRenderer {
     if var color = text.fill as? Color {
       color = RenderUtils.applyOpacity(color, opacity: opacity)
       MGraphicsPushContext(ctx.cgContext!)
-      message.draw(in: getBounds(font), withAttributes: [NSFontAttributeName: font,
-                                                         NSForegroundColorAttributeName: getTextColor(color)])
+      message.draw(in: getBounds(font), withAttributes: [NSAttributedStringKey.font: font,
+                                                         NSAttributedStringKey.foregroundColor: getTextColor(color)])
       MGraphicsPopContext()
     }
   }
@@ -82,7 +82,7 @@ class TextRenderer: NodeRenderer {
       return .zero
     }
     
-    let textAttributes = [NSFontAttributeName: font]
+    let textAttributes = [NSAttributedStringKey.font: font]
     let textSize = NSString(string: text.text).size(attributes: textAttributes)
     return CGRect(x: calculateAlignmentOffset(text, font: font),
                   y: calculateBaselineOffset(text, font: font),
@@ -106,7 +106,7 @@ class TextRenderer: NodeRenderer {
   
   fileprivate func calculateAlignmentOffset(_ text: Text, font: MFont) -> CGFloat {
     let textAttributes = [
-      NSFontAttributeName: font
+      NSAttributedStringKey.font: font
     ]
     let textSize = NSString(string: text.text).size(attributes: textAttributes)
     var alignmentOffset = CGFloat(0)

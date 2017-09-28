@@ -25,7 +25,7 @@ class SVGViewController: NSViewController {
         openPanel.allowedFileTypes = ["svg"]
         openPanel.allowsMultipleSelection = false
         openPanel.begin { (result) in
-            if result == NSModalResponseOK {
+            if result == NSApplication.ModalResponse.OK {
                 guard let url = openPanel.url else { return }
                 self.loadSVG(at: url)
             }

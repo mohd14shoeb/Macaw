@@ -85,7 +85,7 @@ import Foundation
     open override func touchesBegan(with event: NSEvent) {
         super.touchesBegan(with: event)
         
-        let touchPoints = event.touches(matching: .any, in: self).map { touch -> MTouchEvent in
+        let touchPoints = event.touches(matching: NSTouch.Phase.any, in: self).map { touch -> MTouchEvent in
             let location = touch.location(in: self)
             let id = Int(bitPattern: Unmanaged.passUnretained(touch).toOpaque())
             
@@ -98,7 +98,7 @@ import Foundation
     open override func touchesEnded(with event: NSEvent) {
         super.touchesEnded(with: event)
         
-        let touchPoints = event.touches(matching: .any, in: self).map { touch -> MTouchEvent in
+        let touchPoints = event.touches(matching: NSTouch.Phase.any, in: self).map { touch -> MTouchEvent in
             let location = touch.location(in: self)
             let id = Int(bitPattern: Unmanaged.passUnretained(touch).toOpaque())
             
@@ -111,7 +111,7 @@ import Foundation
     open override func touchesMoved(with event: NSEvent) {
         super.touchesMoved(with: event)
         
-        let touchPoints = event.touches(matching: .any, in: self).map { touch -> MTouchEvent in
+        let touchPoints = event.touches(matching: NSTouch.Phase.any, in: self).map { touch -> MTouchEvent in
             let location = touch.location(in: self)
             let id = Int(bitPattern: Unmanaged.passUnretained(touch).toOpaque())
             
@@ -124,7 +124,7 @@ import Foundation
     open override func touchesCancelled(with event: NSEvent) {
         super.touchesCancelled(with: event)
         
-        let touchPoints = event.touches(matching: .any, in: self).map { touch -> MTouchEvent in
+        let touchPoints = event.touches(matching: NSTouch.Phase.any, in: self).map { touch -> MTouchEvent in
             let location = touch.location(in: self)
             let id = Int(bitPattern: Unmanaged.passUnretained(touch).toOpaque())
             
@@ -142,7 +142,7 @@ import Foundation
     }
     
     private func subscribeForMouseDown() {
-        NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown, handler: { [weak self] event -> NSEvent? in
+        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.leftMouseDown, handler: { [weak self] event -> NSEvent? in
             self?.handleInput(event: event, handler: { touches in
                 self?.mTouchesBegan(touches)
             })
@@ -152,7 +152,7 @@ import Foundation
     }
     
     private func subscribeForMouseUp() {
-        NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp, handler: { [weak self] event -> NSEvent? in
+        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.leftMouseUp, handler: { [weak self] event -> NSEvent? in
             self?.handleInput(event: event, handler: { touches in
                 self?.mTouchesEnded(touches)
             })
@@ -162,7 +162,7 @@ import Foundation
     }
 
     private func subscribeForMouseDragged() {
-        NSEvent.addLocalMonitorForEvents(matching: .leftMouseDragged, handler: { [weak self] event -> NSEvent? in
+        NSEvent.addLocalMonitorForEvents(matching: NSEvent.EventTypeMask.leftMouseDragged, handler: { [weak self] event -> NSEvent? in
             self?.handleInput(event: event, handler: { touches in
                 self?.mTouchesMoved(touches)
             })

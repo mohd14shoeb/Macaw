@@ -140,8 +140,8 @@ open class Image: Node {
     for format in decodableFormat {
         let prefix = "data:\(format);base64,"
         if src.hasPrefix(prefix) {
-            let src = self.src.substring(from: prefix.endIndex)
-            guard let decodedData = Data(base64Encoded: src, options: .ignoreUnknownCharacters) else {
+            let src = self.src[prefix.endIndex...]
+            guard let decodedData = Data(base64Encoded: String(src), options: .ignoreUnknownCharacters) else {
                 return .none
             }
 
@@ -155,6 +155,6 @@ open class Image: Node {
     }
     
     // General case
-    return MImage(named: src)
+    return MImage(named: NSImage.Name(rawValue: src))
   }
 }

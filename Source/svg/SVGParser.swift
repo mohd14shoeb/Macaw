@@ -65,11 +65,16 @@ open class SVGParser {
     }
     
     fileprivate func parse() -> Group {
+        let t = CACurrentMediaTime()
+
         let parsedXml = SWXMLHash.parse(xmlString)
+        print("XMLParse in \(CACurrentMediaTime() - t)s")
         iterateThroughXmlTree(parsedXml.children)
 
         let group = Group(contents: self.nodes, place: initialPosition)
         group.viewBox = viewBox
+
+        print("Parsed in \(CACurrentMediaTime() - t)s")
         return group
     }
     
@@ -169,6 +174,8 @@ open class SVGParser {
                 return parseUse(node, fill: getFillColor(styleAttributes), stroke: getStroke(styleAttributes), pos: position, opacity: getOpacity(styleAttributes))
             case "mask":
                 break
+            case "clipPath":
+                break
             default:
                 print("SVG parsing error. Shape \(element.name) not supported")
                 return .none
@@ -209,7 +216,7 @@ open class SVGParser {
     fileprivate func getMask(mask: String) -> Locus? {
         if let maskIdenitifierMatcher = SVGParserRegexHelper.getMaskIdenitifierMatcher() {
             let fullRange = NSMakeRange(0, mask.characters.count)
-            if let match = maskIdenitifierMatcher.firstMatch(in: mask, options: .reportCompletion, range: fullRange), let maskReferenceNode = self.defMasks[(mask as NSString).substring(with: match.rangeAt(1))] {
+            if let match = maskIdenitifierMatcher.firstMatch(in: mask, options: .reportCompletion, range: fullRange), let maskReferenceNode = self.defMasks[(mask as NSString).substring(with: match.range(at: 1))] {
                 return maskReferenceNode.form
             }
         }
@@ -233,8 +240,8 @@ open class SVGParser {
         
         if let matchedAttribute = matcher.firstMatch(in: attributes, options: .reportCompletion, range: fullRange) {
             
-            let attributeName = (attributes as NSString).substring(with: matchedAttribute.rangeAt(1))
-            let values = parseTransformValues((attributes as NSString).substring(with: matchedAttribute.rangeAt(2)))
+            let attributeName = (attributes as NSString).substring(with: matchedAttribute.range(at: 1))
+            let values = parseTransformValues((attributes as NSString).substring(with: matchedAttribute.range(at: 2)))
             if values.isEmpty {
                 return transform
             }
@@ -299,7 +306,7 @@ open class SVGParser {
     fileprivate func parseRGBNotation(colorString: String) -> Color {
         let from = colorString.characters.index(colorString.startIndex, offsetBy: 4)
         let inPercentage = colorString.characters.contains("%")
-        let sp = colorString.substring(from: from)
+        let sp = colorString[from...]
             .replacingOccurrences(of: "%", with: "")
             .replacingOccurrences(of: ")", with: "")
             .replacingOccurrences(of: " ", with: "")
@@ -399,7 +406,7 @@ open class SVGParser {
             return hasFillOpacity ? color.with(a: opacity) : color
         } else if fillColor.hasPrefix("url") {
             let index = fillColor.characters.index(fillColor.startIndex, offsetBy: 4)
-            let id = fillColor.substring(from: index)
+            let id = fillColor[index...]
                 .replacingOccurrences(of: "(", with: "")
                 .replacingOccurrences(of: ")", with: "")
                 .replacingOccurrences(of: "#", with: "")
@@ -425,7 +432,7 @@ open class SVGParser {
             fill = parseRGBNotation(colorString: strokeColor)
         } else if strokeColor.hasPrefix("url") {
             let index = strokeColor.characters.index(strokeColor.startIndex, offsetBy: 4)
-            let id = strokeColor.substring(from: index)
+            let id = strokeColor[index...]
                 .replacingOccurrences(of: "(", with: "")
                 .replacingOccurrences(of: ")", with: "")
                 .replacingOccurrences(of: "#", with: "")
@@ -635,7 +642,7 @@ open class SVGParser {
             let elementString = element.description
             let fullRange = NSMakeRange(0, elementString.characters.count)
             if let match = matcher.firstMatch(in: elementString, options: .reportCompletion, range: fullRange) {
-                let tspans = (elementString as NSString).substring(with: match.rangeAt(1))
+                let tspans = (elementString as NSString).substring(with: match.range(at: 1))
                 return Group(contents: collectTspans(tspans, fill: fill, opacity: opacity, fontName: fontName, fontSize: fontSize,
                                                      bounds: Rect(x: getDoubleValue(element, attribute: "x") ?? 0, y: getDoubleValue(element, attribute: "y") ?? 0)),
                              place: pos, tag: getTag(element))
@@ -774,7 +781,7 @@ open class SVGParser {
             }
             if let maskIdenitifierMatcher = SVGParserRegexHelper.getMaskIdenitifierMatcher() {
                 let fullRange = NSMakeRange(0, mask.characters.count)
-                if let match = maskIdenitifierMatcher.firstMatch(in: mask, options: .reportCompletion, range: fullRange), let maskReferenceNode = self.defMasks[(mask as NSString).substring(with: match.rangeAt(1))] {
+                if let match = maskIdenitifierMatcher.firstMatch(in: mask, options: .reportCompletion, range: fullRange), let maskReferenceNode = self.defMasks[(mask as NSString).substring(with: match.range(at: 1))] {
                     shape.clip = maskReferenceNode.form
                     shape.fill = .none
                 }
@@ -1119,7 +1126,7 @@ open class SVGParser {
         }
         var cleanedFontSize = fontSize
         if cleanedFontSize.hasSuffix("px") {
-            cleanedFontSize = cleanedFontSize.substring(to: cleanedFontSize.index(cleanedFontSize.endIndex, offsetBy: -2))
+            cleanedFontSize = String(cleanedFontSize[...cleanedFontSize.index(cleanedFontSize.endIndex, offsetBy: -2)])
         }
         if let size = Double(cleanedFontSize) {
             return (Int(round(size)))
