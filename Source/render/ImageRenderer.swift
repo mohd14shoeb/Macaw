@@ -60,7 +60,7 @@ class ImageRenderer: NodeRenderer {
       return .none
     }
     
-    if let mImage = MImage(named: NSImage.Name(rawValue: image.src)) {
+    if let mImage = MImage(namedString: image.src) {
       let rect = getRect(mImage)
       if (rect.contains(location)) {
         return node()

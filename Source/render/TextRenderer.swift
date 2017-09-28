@@ -83,7 +83,7 @@ class TextRenderer: NodeRenderer {
     }
     
     let textAttributes = [NSAttributedStringKey.font: font]
-    let textSize = NSString(string: text.text).size(attributes: textAttributes)
+    let textSize = NSString(string: text.text).size(withAttributes: textAttributes)
     return CGRect(x: calculateAlignmentOffset(text, font: font),
                   y: calculateBaselineOffset(text, font: font),
                   width: CGFloat(textSize.width), height: CGFloat(textSize.height))
@@ -108,7 +108,7 @@ class TextRenderer: NodeRenderer {
     let textAttributes = [
       NSAttributedStringKey.font: font
     ]
-    let textSize = NSString(string: text.text).size(attributes: textAttributes)
+    let textSize = NSString(string: text.text).size(withAttributes: textAttributes)
     var alignmentOffset = CGFloat(0)
     switch text.align {
     case Align.mid:

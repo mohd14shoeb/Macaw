@@ -65,16 +65,12 @@ open class SVGParser {
     }
     
     fileprivate func parse() -> Group {
-        let t = CACurrentMediaTime()
-
         let parsedXml = SWXMLHash.parse(xmlString)
-        print("XMLParse in \(CACurrentMediaTime() - t)s")
         iterateThroughXmlTree(parsedXml.children)
 
         let group = Group(contents: self.nodes, place: initialPosition)
         group.viewBox = viewBox
 
-        print("Parsed in \(CACurrentMediaTime() - t)s")
         return group
     }
     

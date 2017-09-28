@@ -154,7 +154,7 @@ open class Image: Node {
         return nil
     }
     
-    // General case
-    return MImage(named: NSImage.Name(rawValue: src))
+    // General case    
+    return MImage(namedString: src)
   }
 }

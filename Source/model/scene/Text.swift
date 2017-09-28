@@ -71,7 +71,7 @@ open class Text: Node {
     }
     var stringAttributes: [NSAttributedStringKey: AnyObject] = [:]
     stringAttributes[NSAttributedStringKey.font] = font
-    let size = (text as NSString).size(attributes: stringAttributes)
+    let size = (text as NSString).size(withAttributes: stringAttributes)
     return Rect(
       x: calculateAlignmentOffset(font: font),
       y: calculateBaselineOffset(font: font),
@@ -99,7 +99,7 @@ open class Text: Node {
     let textAttributes = [
       NSAttributedStringKey.font: font
     ]
-    let textSize = NSString(string: text).size(attributes: textAttributes)
+    let textSize = NSString(string: text).size(withAttributes: textAttributes)
     var alignmentOffset = 0.0
     switch align {
     case .mid:
