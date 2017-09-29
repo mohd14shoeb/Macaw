@@ -32,20 +32,13 @@ open class Node: Drawable {
 		set(val) { effectVar.value = val }
 	}
     
-    internal var id: String {
-        didSet {
-            Node.map.removeObject(forKey: id as NSString)
-            Node.map.setObject(self, forKey: id as NSString)
-        }
-    }
+    internal var id: String
     
     // MARK: - ID map
-    private static let map = NSMapTable<NSString, Node>(keyOptions: NSMapTableStrongMemory, valueOptions: NSMapTableWeakMemory)
-    
+
     open static func nodeBy(id: String) -> Node? {
-        return Node.map.object(forKey: id as NSString)
+        return nil
     }
-    
     
     // MARK: - Searching
     public func nodeBy(tag: String) -> Node? {
@@ -237,8 +230,6 @@ open class Node: Drawable {
 		)
 		self.placeVar.node = self
 		self.opacityVar.node = self
-        
-        Node.map.setObject(self, forKey: self.id as NSString)
 	}
 
 	// GENERATED NOT
